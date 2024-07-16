@@ -1,0 +1,2 @@
+** Kryptowaluta Proof Of Work **
+

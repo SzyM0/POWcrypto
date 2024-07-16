@@ -1,0 +1,5 @@
+test/.pytest_cache/
+.idea/
+*.mdj
+*.jpg
+src/__pycache__/
