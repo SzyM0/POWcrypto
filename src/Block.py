@@ -34,7 +34,7 @@ class Block:
                 nonce += 1
 
     def to_dict(self):
-
+        pass
 
     # def calculateMerkleRoot(self):
 
