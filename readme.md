@@ -47,13 +47,13 @@ The project uses the Proof of Work (PoW) algorithm to secure the blockchain. PoW
 
 ### Prerequisites
 
-- Python 3.x
+- Python 3.7 or later
 - Required Python libraries (specified in `requirements.txt`)
 
 ### Installation
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/simple-cryptocurrency.git
+   git clone https://github.com/SzyM0/POWcrypto.git
 
 
