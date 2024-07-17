@@ -14,7 +14,7 @@ def pubKeyFromStr(key):
 class TransactionOutput:
     # Transaction ID, recipient
 
-    def __init__(self, recipient: VerifyingKey, value: float, ID: str =None):
+    def __init__(self, recipient: VerifyingKey, value: float, ID: str=None):
         self.recipient = recipient
         self.value = value
         self.ID = self.createID() if ID is None else ID  # ID == none tylko w przypadku bloku genezy
@@ -63,23 +63,22 @@ class TransactionInput:
 
 class Transaction:
     # Transaction inputs, transaction outputs, signature
-    # todo dodać niestandardowe typy
     def __init__(self,
-                 sender: VerifyingKey,
+                 sender: VerifyingKey | None,  # None possible if genesis block
                  recipient: List[VerifyingKey] | VerifyingKey,
                  value: List[float] | float,
-                 inputs: List[TransactionInput] | TransactionOutput,
-                 change: float):
-
+                 inputs: List[TransactionInput] | TransactionInput | None,  # None possible if genesis block
+                 change: float,
+                 ID: str=None):
+        self.blockIndex = 0  # ?
         self.sender = sender
         self.recipient = recipient
         self.value = value
         self.change = change
         self.signature = 0
         self.inputs = inputs
-        self.transactionID = self.createID()
+        self.transactionID = self.createID() if ID is None else ID
         self.outputs = self.createOutputs()
-        # self.senderAddress ## ??
 
     def createID(self) -> str:
         '''
@@ -94,7 +93,7 @@ class Transaction:
                    str(self.value).encode('utf-8'))
         return sha.hexdigest()
 
-    def createOutputs(self) -> List[TransactionOutput] | TransactionOutput:
+    def createOutputs(self) -> List[TransactionOutput] | TransactionOutput | None:
         '''
         Creates output objects based on the list of recipients
 
@@ -108,16 +107,16 @@ class Transaction:
         if not isinstance(self.recipient, list) and not isinstance(self.value, list):
             uxto_set.append(TransactionOutput(self.recipient, self.value, self.transactionID))
         else:
-        # If more than one recipients
+            # If more than one recipient
             if len(self.recipient) != len(self.value):
                 print("Wrong transaction data: recipient and value mismatch")
                 return None
 
-            for deastinationAddress, value in zip(self.recipient, self.value):
-                uxto_set.append(TransactionOutput(deastinationAddress, value, self.transactionID))
+            for destinationAddress, value in zip(self.recipient, self.value):
+                uxto_set.append(TransactionOutput(destinationAddress, value, self.transactionID))
 
         # If change needed
-        if self.change > 0: # return yourself a change
+        if self.change > 0:  # return yourself a change
             uxto_set.append(TransactionOutput(self.sender, self.change, self.transactionID))
 
         return uxto_set
@@ -164,7 +163,7 @@ class Transaction:
         return False
 
     def to_dict(self) -> dict:
-        # in case more than one recipients
+        # in case more than one recipient
         recipient = [pubKeyToStr(rcp) for rcp in self.recipient] if isinstance(self.recipient, list) else self.recipient
         inputs = [inp.to_dict() for inp in self.inputs] if isinstance(self.inputs, list) else self.inputs
         outputs = [out.to_dict() for out in self.outputs] if isinstance(self.outputs, list) else self.outputs

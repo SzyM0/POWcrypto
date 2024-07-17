@@ -3,3 +3,4 @@ test/.pytest_cache/
 *.mdj
 *.jpg
 src/__pycache__/
+test/__pycache__/

@@ -8,42 +8,44 @@ import unittest
 from src.Transaction import *
 
 
+sk = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256)  # The default is sha1
+wallet = sk.get_verifying_key()
+
+sk2 = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256, )  # The default is sha1
+wallet2 = sk2.get_verifying_key()
+
+sk3 = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256, )  # The default is sha1
+wallet3 = sk3.get_verifying_key()
+
 class TransactionTest(unittest.TestCase):
 
 
     def test_transaction_constructor_1input(self):
-        UXTO = TransactionOutput("rcpnt", 0.5, "0")
+        UXTO = TransactionOutput(wallet, 0.5, "0")
         inpt = TransactionInput(UXTO)
 
-        tx = Transaction("sndr", ["rcpnt2"], [0.1], inpt, 0)
+        tx = Transaction(wallet, wallet2, 0.1, inpt, 0)
 
-        self.assertEqual(tx.outputs, [TransactionOutput("rcpnt2", 0.1, tx.transactionID)] )
+        self.assertEqual(tx.outputs, [TransactionOutput(wallet2, 0.1, tx.transactionID)])
 
     def test_transaction_constructor_3input(self):
-        UXTO = TransactionOutput("rcpnt", 0.5, "0")
+        UXTO = TransactionOutput(wallet, 0.5, "0")
         inpt = TransactionInput(UXTO)
 
-        tx = Transaction("sndr", ["rcpnt2", "rcpnt1", "rcpnt3"], [0.1, 0.2, 0.3], inpt, 0)
+        tx = Transaction(wallet, [wallet2, wallet3], [0.1, 0.2], inpt, 0)
 
-        self.assertEqual(tx.outputs, [TransactionOutput("rcpnt2", 0.1, tx.transactionID),
-                                      TransactionOutput("rcpnt1", 0.2, tx.transactionID),
-                                      TransactionOutput("rcpnt3", 0.3, tx.transactionID)])
+        self.assertEqual(tx.outputs, [TransactionOutput(wallet2, 0.1, tx.transactionID),
+                                      TransactionOutput(wallet3, 0.2, tx.transactionID)])
 
     def test_signature_verification(self):
-        UXTO = TransactionOutput("rcpnt", 0.5, "0")
+        UXTO = TransactionOutput(wallet, 0.5, "0")
         inpt = TransactionInput(UXTO)
 
-        tx = Transaction("sndr", ["rcpnt2"], [0.1], inpt, 0)
-
-        sk = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256) # The default is sha1
-        vk = sk.get_verifying_key()
-
-        sk2 = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256, )  # The default is sha1
-        vk2 = sk2.get_verifying_key()
+        tx = Transaction(wallet2, wallet3, 0.1, inpt, 0)
 
         tx.createSignature(sk)
-        self.assertEqual(tx.comfirmSignature(vk), True)
-        self.assertEqual(tx.comfirmSignature(vk2), False)
+        self.assertEqual(tx.comfirmSignature(wallet), True)
+        self.assertEqual(tx.comfirmSignature(wallet2), False)
 
 
     def test_transaction_json(self):

@@ -11,7 +11,7 @@ class Wallet:
         self.prvKey, self.pubKey = generateKeyPair()
         self.UXTO = []
 
-    def getBalance(self, UXTO: TransactionOutput):
+    def getBalance(self, UXTO: List[TransactionOutput] | TransactionOutput):
         # Updates UXTO field by looking for unspent transactions in DB?
 
         self.UXTO = UXTO
