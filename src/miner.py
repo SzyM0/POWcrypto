@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 from tinydb import TinyDB, Query
+from flask import Flask, jsonify
 
 transactionRepo = TinyDB('../database/Transactions.json')
 uxtoRepo = TinyDB('../database/UXTO.json')
@@ -21,10 +22,38 @@ transaction repo
 uxto repo
 '''
 
+app = Flask(__name__)
+
+@app.route('/receiveTransaction', methods=['POST'])
+def receiveTransaction():
+    pass
+
+'''
+1. check if correct and send back a response  
+2. add to local mempool
+'''
+
 
 
 if __name__ == '__main__':
-    pass
+    app.run(debug=True)
+
+
+    """
+    1. take tx from local mempool 
+    
+    2. create new block
+    
+    3. add tx to block
+    
+    4. mine block? 
+    
+    5. update uxto, tx, chain in local memory
+    
+    6. update them in database 
+    """
+
+
 
 
 

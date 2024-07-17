@@ -123,6 +123,7 @@ class Transaction:
 
     def createSignature(self, privKey: SigningKey) -> None:
         '''
+        todo czy jest sens to przekazywac, może użyć self.sender?
         Gets private key of the owner of UXTO and sighns the transaction.
 
         :param privKey: private key
@@ -144,11 +145,11 @@ class Transaction:
         data = str(self.recipient).encode('utf-8') + str(self.sender).encode('utf-8') + str(self.value).encode('utf-8')
 
         try:
-            signature = pubKey.verify(self.signature, data)
+            confirmation_result = pubKey.verify(self.signature, data)
         except ecdsa.BadSignatureError:
             return False
 
-        return signature
+        return confirmation_result
 
     def __eq__(self, other) -> bool:
         if isinstance(other, Transaction):
@@ -179,5 +180,63 @@ class Transaction:
             'outputs': outputs
         }
 
+
+def verifyTransacion(transaction: Transaction):
+    """
+    todo napisać test
+    Sprawdź czy inputy są w uxto
+    sprawdź podpis
+    sprawdź czy format się zgadza, jak jest dwóch odbiorców to dwa outputy itp
+    sprawdź czy suma wejść równa się sumie wyjść
+
+    :param transaction:
+    :return:
+    """
+
+    # check if when there's more than one recipient the list of values and recipients are the same
+    if isinstance(transaction.recipient, list) and isinstance(transaction.value, list):
+        if len(transaction.recipient) != len(transaction.value):
+            print("Wrong transaction data: recipient and value length mismatch")
+            return False
+
+    #check if inputs/outputs exist
+    if not transaction.inputs:
+        print("Input values are missing")
+        return False
+
+    if not transaction.outputs:
+        print("Output values are missing")
+        return False
+
+    # check if input not already spent
+    for txInput in :
+        if isinstance(txInput, TransactionInput):
+            if txInput not in UXTOs:
+                print("Funds already spent")
+                return False
+        else:
+            print("Wrong format of transaction input")
+            return False
+
+    #check signature
+    if not transaction.comfirmSignature(transaction.sender):
+        print("Signature incorrect")
+        return False
+
+    # check if value of inputs is the same as value of outputs
+    balanceIn = 0
+    balanceOut = 0
+
+    for txInput in transaction.inputs:
+        if isinstance(txInput, TransactionInput):
+            balanceIn += txInput.UXTO.value
+
+    for txOutput in transaction.outputs:
+        if isinstance(txOutput, TransactionOutput):
+            balanceOut += txOutput.value
+
+    if balanceOut != balanceIn:
+        print("Inputs are not equal to outputs")
+        return False
 
 

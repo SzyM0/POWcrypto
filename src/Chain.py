@@ -32,3 +32,5 @@ class Chain:
         # genesisBlock = Block(0, "0")
         # genesisBlock.addTransaction(genesisTransaction)
         # genesisBlock.mineBlock()
+
+
