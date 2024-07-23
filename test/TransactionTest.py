@@ -1,10 +1,9 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import hashlib
-import ecdsa
 
 import json
 import unittest
+
 from src.Transaction import *
 
 
@@ -48,25 +47,80 @@ class TransactionTest(unittest.TestCase):
         self.assertEqual(tx.comfirmSignature(wallet2), False)
 
 
+    def test_transaction_pubKeyFromString(self):
+        uxto = TransactionOutput(wallet2, 0.5, "0")
+        inpt = TransactionInput(uxto)
+
+        tx = Transaction(wallet2, wallet3, 0.1, inpt, 0)
+
+        tx.createSignature(sk)
+
+        self.assertEqual(tx.comfirmSignature(wallet), True)
+        self.assertEqual(tx.comfirmSignature(wallet2), False)
+
+    def test_transaction_sigToStr(self):
+        uxto = TransactionOutput(wallet2, 0.5, "0")
+        inpt = TransactionInput(uxto)
+        tx = Transaction(wallet2, wallet3, 0.1, inpt, 0)
+        tx.createSignature(sk2)
+
+        sig_to_str = sigToStr(tx.signature)
+        sig_recovered = sigFromStr(sig_to_str)
+
+        tx.signature = sig_recovered
+
+        self.assertEqual(tx.comfirmSignature(wallet2), True)
+        self.assertEqual(tx.comfirmSignature(wallet), False)
+
+
+
     def test_transaction_json(self):
-        sk = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256, )  # The default is sha1
-        vk = sk.get_verifying_key()
+        uxto = TransactionOutput(wallet, 0.5, "0")
+        inpt = TransactionInput(uxto)
+        tx = Transaction(wallet, wallet2, 0.3, inpt, 0)
 
-        UXTO = TransactionOutput(vk, 0.5, "0")
-        inpt = TransactionInput(UXTO)
+        tx.createSignature(sk)
 
-        # tx = Transaction("sndr", ["rcpnt2"], [0.1], inpt, 0)
-        exp = {
-            'recipient': vk,
-            'value': 0.5,
-            'ID': "0"
-        }
+        data = tx.to_dict()
 
-        jsonstr2 = json.dumps(UXTO.to_dict())
-        data = json.loads(jsonstr2)
-        print(pubKeyFromStr(data["recipient"]))
+        jsonstr2 = json.dumps(tx.to_dict())
+        tx_dict_from_json = json.loads(jsonstr2)
+        txJSON = transactionFromJSON(tx_dict_from_json)
 
-        self.assertEqual(vk, pubKeyFromStr(data["recipient"]))
+        # f = open("myfile.txt", "a")
+        # f.write(jsonstr2)
+        # f.close()
+
+        self.assertEqual(tx, txJSON)
+
+        self.assertEqual(tx.blockIndex, txJSON.blockIndex, "Block indices are not equal")
+        self.assertEqual(tx.sender, txJSON.sender, "Sender addresses are not equal")
+        self.assertEqual(tx.recipient, txJSON.recipient, "Recipient addresses are not equal")
+        self.assertEqual(tx.value, txJSON.value, "Transaction values are not equal")
+        self.assertEqual(tx.change, txJSON.change, "Change values are not equal")
+        self.assertEqual(tx.signature, txJSON.signature, "Signatures are not equal")
+        self.assertEqual(tx.inputs, txJSON.inputs, "Input lists are not equal")
+        self.assertEqual(tx.transactionID, txJSON.transactionID, "Transaction IDs are not equal")
+        self.assertEqual(tx.outputs, txJSON.outputs, "Outputs are not equal")
+
+    def test_verify_transaction(self):
+        uxto = TransactionOutput(wallet, 0.5, "0")
+        UXTOs.append(uxto)
+        inpt = TransactionInput(uxto)
+        tx = Transaction(wallet, wallet2, 0.3, inpt, 0.2)
+
+        tx.createSignature(sk)
+        print(verify_transaction(tx))
+        self.assertEqual(verify_transaction(tx), True)
+
+        tx = Transaction(wallet, wallet2, 0.3, inpt, 0)
+        tx.createSignature(sk)
+        self.assertEqual(verify_transaction(tx), False)
+
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

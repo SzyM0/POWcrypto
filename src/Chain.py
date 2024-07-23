@@ -4,11 +4,10 @@
 '''
 Database controller?
 '''
-from src.Block import Block
-from src.Transaction import Transaction
+from src.Transaction import Transaction, UXTOs
 from src.Wallet import Wallet
+from miner import UXTOs
 
-UXTOs = []  # to troche na pałe na razie
 
 
 class Chain:
