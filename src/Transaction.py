@@ -45,15 +45,12 @@ class TransactionOutput:
         return sha.hexdigest()
 
     def __eq__(self, other):
-        # todo jest debugowane tera
         if isinstance(other, TransactionOutput):
             result = self.ID == other.ID
         elif isinstance(other, TransactionInput):
-
             result = self.ID == other.ID and other.UXTO.recipient == self.recipient and other.UXTO.value == self.value
         else:
             result = False
-        # print(f"Comparing {self} to {other}, result: {result}")
         return result
 
     def to_dict(self):
@@ -72,18 +69,12 @@ class TransactionInput:
         self.UXTO = UXTO
 
     def __eq__(self, other):
-        # if isinstance(other, TransactionInput):
-        #     return self.ID == other.ID and self.UXTO == other.UXTO
-        # if isinstance(other, TransactionOutput):
-        #     return self.ID == other.ID and self.UXTO.recipient == other.recipient and self.UXTO.value == other.value
-        # return False
         if isinstance(other, TransactionInput):
             result = self.ID == other.ID and self.UXTO == other.UXTO
         elif isinstance(other, TransactionOutput):
             result = self.ID == other.ID and self.UXTO.recipient == other.recipient and self.UXTO.value == other.value
         else:
             result = False
-        # print(f"Comparing {self} to {other}, result: {result}")
         return result
 
     def __hash__(self):
@@ -138,8 +129,6 @@ class Transaction:
     def createOutputs(self) -> List[TransactionOutput] | TransactionOutput | None:
         '''
         Creates output objects based on the list of recipients
-
-        todo check if the list of recipent is as long as list of value or even replace it with dictionary
         :return: UXTO list
         '''
 
@@ -166,29 +155,27 @@ class Transaction:
 
     def createSignature(self, privKey: SigningKey) -> None:
         '''
-        todo czy jest sens to przekazywac, może użyć self.sender?
         Gets private key of the owner of UXTO and sighns the transaction.
 
         :param privKey: private key
         :return: Updates signature field
-        todo moze spróbować wygerenowac pub key i sprawdzic czy to ten sam co sender
         '''
 
         data = str(self.recipient).encode('utf-8') + str(self.sender).encode('utf-8') + str(self.value).encode('utf-8')
         signature = privKey.sign(data)
         self.signature = signature
 
-    def comfirmSignature(self, pubKey: VerifyingKey) -> bool:
+    def comfirmSignature(self) -> bool:
         '''
         Gets public key and checks if the signature is correct.
 
-        :param pubKey: public key
+        :param : public key
         :return: True/False
         '''
         data = str(self.recipient).encode('utf-8') + str(self.sender).encode('utf-8') + str(self.value).encode('utf-8')
 
         try:
-            confirmation_result = pubKey.verify(self.signature, data)
+            confirmation_result = self.sender.verify(self.signature, data)
         except ecdsa.BadSignatureError:
             return False
 
@@ -209,10 +196,16 @@ class Transaction:
     def to_dict(self) -> dict:
         # in case more than one recipient
         recipient = [pubKeyToStr(rcp) for rcp in self.recipient] if isinstance(self.recipient, list) else pubKeyToStr(self.recipient)
-        inputs = [inp.to_dict() for inp in self.inputs] if isinstance(self.inputs, list) else self.inputs.to_dict()
         outputs = [out.to_dict() for out in self.outputs] if isinstance(self.outputs, list) else self.outputs.to_dict()
+        # inputs = [inp.to_dict() for inp in self.inputs] if isinstance(self.inputs, list) else self.inputs.to_dict()
 
-        #  todo dokończyć
+        if self.inputs is None:
+            inputs = None
+        elif isinstance(self.inputs, list):
+            inputs = [inp.to_dict() for inp in self.inputs]
+        else:
+            inputs = self.inputs.to_dict()
+
         return {
             'transactionID': self.transactionID,
             'sender': pubKeyToStr(self.sender),

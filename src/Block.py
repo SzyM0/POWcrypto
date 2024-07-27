@@ -9,8 +9,8 @@ from Transaction import Transaction
 class Block:
     # Keeps data like hash, nonce, prev hash, merkleRoot, timestamp
 
-    def __init__(self, index: int, prevHash: str) -> None:
-        self.blockIndex = 0  # todo pamiętać o tym - na razie nie mam pomysłu w jakim miejscu to inicjalozować
+    def __init__(self, prevHash: str, index:  int = 0) -> None:
+        self.blockIndex = index
         self.hash = 0  # calc during mining
         self.prevHash = prevHash
         self.data = []  # list of transactions id
@@ -26,9 +26,15 @@ class Block:
 
         return sha.hexdigest()
 
-    def mineBlock(self):
-        self.nonce, self.hash = self.compute_hash_with_proof_of_work()
-        print(f"Block mined successfully at {self.timestamp} \nBlock inxex:{self.blockIndex}\n Hash: {self.hash}\nPrevHash: {self.prevHash}\n--------\n" )
+    def mineBlock(self, difficulty: str) -> None:
+        self.nonce, self.hash = self.compute_hash_with_proof_of_work(difficulty)
+        print(f"\n ---------- "
+              f"Block mined successfully at {self.timestamp}"
+              f" ---------- \n"
+              f"Block index:{self.blockIndex}\n"
+              f"Hash: {self.hash}\n"
+              f"PrevHash: {self.prevHash}"
+              f"\n")
 
     def compute_hash_with_proof_of_work(self, difficulty="00"):
         nonce = 0
@@ -39,8 +45,7 @@ class Block:
             else:
                 nonce += 1
 
-    def addTransaction(self, transaction: Transaction, index: int):
-        self.blockIndex = index
+    def addTransaction(self, transaction: Transaction):
         self.data.append(transaction.transactionID)
 
     def to_dict(self):

@@ -12,7 +12,7 @@ class Wallet:
         self.prvKey, self.pubKey = generateKeyPair()
         self.UXTO = []
 
-    def getBalance(self, UXTO: List[TransactionOutput] | TransactionOutput):
+    def getBalance(self, UXTO: List[TransactionOutput] | TransactionOutput) -> int:
         # Updates UXTO field by looking for unspent transactions in DB?
 
         self.UXTO.clear()
@@ -50,7 +50,7 @@ class Wallet:
         for uxto in self.UXTO:
             balance += uxto.value
             txIN.append(TransactionInput(uxto))
-            # self.UXTO.remove(uxto)
+            self.UXTO.remove(uxto)
 
             if balance >= value:
                 chng = balance - value

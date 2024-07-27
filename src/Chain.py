@@ -16,6 +16,7 @@ lock = threading.Lock()
 
 SUPPLY = 100
 MIN_NOMINAL = 0.000001 # TODO MOŻNA DODAĆ SPRAWDZENIE TEGO
+DIFFICULTY = "000"
 
 validatedTx = []
 UXTOs = []
@@ -32,9 +33,9 @@ class Chain:
         self.walletA = Wallet()
         self.walletB = Wallet()
 
-        self.genenerateGenesisBlock()
+        # self.genenerateGenesisBlock()
 
-    def genenerateGenesisBlock(self) -> None:
+    def genenerateGenesisBlock(self) -> str:
         coinbase = Wallet()
 
         genesisTransaction = Transaction(coinbase.pubKey, [self.walletA.pubKey, self.walletB.pubKey],
@@ -43,9 +44,12 @@ class Chain:
         genesisTransaction.createSignature(self.walletA.prvKey)
         UXTOs.extend(genesisTransaction.outputs)
 
-        genesisBlock = Block(0, "0")
-        genesisBlock.addTransaction(genesisTransaction, index=0)
-        genesisBlock.mineBlock()
+        genesisBlock = Block(prevHash="0", index=0)
+        genesisBlock.addTransaction(transaction=genesisTransaction)
+        genesisBlock.mineBlock(difficulty=DIFFICULTY)
+        self.addBlock(block=genesisBlock, transactions=[genesisTransaction])
+
+        return genesisBlock.hash
 
     def storeTransactions(self, data: List[Transaction] | Transaction) -> None:
         # Bierze transakcje i zapisuje je do bazy danych
@@ -62,82 +66,70 @@ class Chain:
             outputs = transaction.outputs
             inputs = transaction.inputs
 
-            for input_tx in inputs:
-                self.txOutRepo.remove(Query().ID == input_tx.ID)
-                UXTOs.remove(input_tx)
+            if inputs:  # special case - genesis block
+                for input_tx in inputs:
+                    self.txOutRepo.remove(Query().ID == input_tx.ID)
+                    UXTOs.remove(input_tx)
 
             for output in outputs:
                 self.txOutRepo.insert(output.to_dict())
                 UXTOs.append(output)
 
     def addBlock(self, block: Block, transactions: List[Transaction]) -> None:
-
         self.storeTransactions(transactions)
         self.updateUXTOs(transactions)
         self.blockRepo.insert(block.to_dict())
+
         with lock:
             validatedTx.clear()
 
-    def sendTransactions(self):
+    def sendTransactions(self) -> None:
         self.walletA.getBalance(UXTOs)
-        txA = self.walletA.sendFunds(self.walletB.pubKey, random.randint(2,6))
+        txA = self.walletA.sendFunds(self.walletB.pubKey, random.randint(2, 6))
+
+        self.walletB.getBalance(UXTOs)
+        txB = self.walletB.sendFunds(self.walletB.pubKey, random.randint(2, 6))
+
         url = 'http://127.0.0.1:5000/receiveTransaction'
         requests.post(url, json=txA.to_dict())
-        return txA
-
-    def sendTransactionsB(self):
-        self.walletB.getBalance(UXTOs)
-        txB = self.walletB.sendFunds(self.walletB.pubKey, random.randint(2,6))
-        url = 'http://127.0.0.1:5000/receiveTransaction'
         requests.post(url, json=txB.to_dict())
-        return txB
+
+    def clearRepo(self):
+        self.txRepo.truncate()
+        self.blockRepo.truncate()
+        self.txOutRepo.truncate()
+
+        self.txRepo.close()
+        self.blockRepo.close()
+        self.txOutRepo.close()
 
     def run(self):
         prevIndex = 0
-        prevHash = ''
-        txMempool = []
-        tx = 0
+        prevHash = self.genenerateGenesisBlock()
+
         for i in range(10):
-            print(f"Iteration {i=}")
-            # print_uxto(UXTOs)
-
-            txA = self.sendTransactions()
-            txB = self.sendTransactionsB()
-
-            # print(f"tx: {tx.inputs=}")
-            # print(f"tx: {tx.outputs=}")
             time.sleep(1)
-
-            # #  Wysłać kilka transakcji
-            # validatedTx.append(txA)
-            # validatedTx.append(txB)
+            self.sendTransactions()
 
             with lock:
                 txMempool = validatedTx.copy()
-        #
-        # # create new block and mine
+
+        # create new block and mine
             newBlock = Block(index=prevIndex + 1, prevHash=prevHash)
             for tx in txMempool:
-                newBlock.addTransaction(tx, prevIndex+1)
-            newBlock.mineBlock()  # todo dodać difficulty
+                newBlock.addTransaction(tx)
+            newBlock.mineBlock(difficulty=DIFFICULTY)
             self.addBlock(newBlock, txMempool)
 
             # todo dodać żeby blok kopał się mając z dwie transakcje przynajmniej
-            # dodać zapisywanie danych do tego wszystkiego
 
             prevIndex += 1
             prevHash = newBlock.hash
-
-            # self.storeTransactions(txMempool)
-            # self.updateUXTOs(txMempool)
-
-
             txMempool.clear()
-            # validatedTx.clear()
 
         print(f"{self.walletB.getBalance(UXTOs)=}")
         print(f"{self.walletA.getBalance(UXTOs)=}")
-
+        self.clearRepo()
 
 
 def print_uxto(data):
@@ -159,30 +151,23 @@ def verify_transaction(transaction: Transaction) -> Tuple[bool, str]:
     :return: True if the transaction is valid, False otherwise and error message.
     """
 
+    if transaction is None:
+        print("Transaction is null - discarded")
+        return False, "Transaction is null - discarded"
+
     # Verify recipient and value list match
     if isinstance(transaction.recipient, list) and isinstance(transaction.value, list):
         if len(transaction.recipient) != len(transaction.value):
             print("Mismatch in number of recipients and values.")
             return False, "Mismatch in number of recipients and values."
 
-    # Ensure all inputs are in a proper format and unspent
+    # Ensure all inputs are unspent
     inputs = transaction.inputs if isinstance(transaction.inputs, list) else [transaction.inputs]
-    # Sprawdzenie, czy wszystkie elementy są odpowiedniego typu
-    if not all(isinstance(txInput, TransactionInput) for txInput in inputs):
-        print("Wrong input format.")
-        return False, "Wrong input format."
-
-    # Sprawdzenie, czy wszystkie elementy znajdują się w UXTOs
     if not all(txInput in UXTOs for txInput in inputs):
         print("Funds already spent.")
         return False, "Funds already spent."
 
-    # Verify signature
-    if isinstance(transaction.signature, int):
-        print("No signature")
-        return False, "No signature"
-
-    if not transaction.comfirmSignature(transaction.sender):
+    if not transaction.comfirmSignature():
         print("Invalid signature.")
         return False, "Invalid signature."
 
