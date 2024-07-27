@@ -1,9 +1,10 @@
 import hashlib
+import random
+
 import ecdsa
 from ecdsa import VerifyingKey, SigningKey
-from typing import List, Tuple
+from typing import List
 
-UXTOs = []
 
 def pubKeyToStr(pubkey):
     return pubkey.to_string().hex()
@@ -11,7 +12,7 @@ def pubKeyToStr(pubkey):
 
 def pubKeyFromStr(key):
     vk_bytes = bytes.fromhex(key)
-    return ecdsa.VerifyingKey.from_string(vk_bytes, curve=ecdsa.SECP256k1)
+    return ecdsa.VerifyingKey.from_string(vk_bytes, curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256)
 
 
 def sigToStr(sig: bytes) -> str | None:
@@ -44,11 +45,16 @@ class TransactionOutput:
         return sha.hexdigest()
 
     def __eq__(self, other):
+        # todo jest debugowane tera
         if isinstance(other, TransactionOutput):
-            return self.ID == other.ID and self.recipient == other.recipient and self.value == other.value
-        if isinstance(other, TransactionInput):
-            return self.ID == other.ID and other.UXTO.recipient == self.recipient and other.UXTO.value == self.value
-        return False
+            result = self.ID == other.ID
+        elif isinstance(other, TransactionInput):
+
+            result = self.ID == other.ID and other.UXTO.recipient == self.recipient and other.UXTO.value == self.value
+        else:
+            result = False
+        # print(f"Comparing {self} to {other}, result: {result}")
+        return result
 
     def to_dict(self):
         return {
@@ -66,11 +72,19 @@ class TransactionInput:
         self.UXTO = UXTO
 
     def __eq__(self, other):
+        # if isinstance(other, TransactionInput):
+        #     return self.ID == other.ID and self.UXTO == other.UXTO
+        # if isinstance(other, TransactionOutput):
+        #     return self.ID == other.ID and self.UXTO.recipient == other.recipient and self.UXTO.value == other.value
+        # return False
         if isinstance(other, TransactionInput):
-            return self.ID == other.ID and self.UXTO == other.UXTO
-        if isinstance(other, TransactionOutput):
-            return self.ID == other.ID and self.UXTO.recipient == other.recipient and self.UXTO.value == other.value
-        return False
+            result = self.ID == other.ID and self.UXTO == other.UXTO
+        elif isinstance(other, TransactionOutput):
+            result = self.ID == other.ID and self.UXTO.recipient == other.recipient and self.UXTO.value == other.value
+        else:
+            result = False
+        # print(f"Comparing {self} to {other}, result: {result}")
+        return result
 
     def __hash__(self):
         return hash((self.ID, self.UXTO))
@@ -104,6 +118,9 @@ class Transaction:
         self.transactionID = self.createID() if ID is None else ID
         self.outputs = self.createOutputs() if outputs is None else outputs
 
+    def setBlockIndex(self, index):
+        self.blockIndex = index
+
     def createID(self) -> str:
         '''
         Creates a unique hash based on sender, recipient and value
@@ -114,7 +131,8 @@ class Transaction:
         sha = hashlib.sha256()
         sha.update(str(self.sender).encode('utf-8') +
                    str(self.recipient).encode('utf-8') +
-                   str(self.value).encode('utf-8'))
+                   str(self.value).encode('utf-8') +
+                   str(random.randint(0, 100)).encode('utf-8'))
         return sha.hexdigest()
 
     def createOutputs(self) -> List[TransactionOutput] | TransactionOutput | None:
@@ -167,7 +185,6 @@ class Transaction:
         :param pubKey: public key
         :return: True/False
         '''
-
         data = str(self.recipient).encode('utf-8') + str(self.sender).encode('utf-8') + str(self.value).encode('utf-8')
 
         try:
@@ -195,15 +212,15 @@ class Transaction:
         inputs = [inp.to_dict() for inp in self.inputs] if isinstance(self.inputs, list) else self.inputs.to_dict()
         outputs = [out.to_dict() for out in self.outputs] if isinstance(self.outputs, list) else self.outputs.to_dict()
 
-        #todo dokończyć
+        #  todo dokończyć
         return {
+            'transactionID': self.transactionID,
             'sender': pubKeyToStr(self.sender),
             'recipient': recipient,
             'value': self.value,
-            'inputs': inputs,
             'change': self.change,
             'signature': sigToStr(self.signature),
-            'transactionID': self.transactionID,
+            'inputs': inputs,
             'outputs': outputs
         }
 
@@ -211,6 +228,7 @@ class Transaction:
 def transactionFromJSON(json: dict) -> Transaction:
     input_set_rec = []
     output_set_rec = []
+
     # retrieve inputs
     if isinstance(json['inputs'], list):
         for txInput in json['inputs']:
@@ -224,9 +242,9 @@ def transactionFromJSON(json: dict) -> Transaction:
 
     else:
         input_set_rec.append(None)
+
     # retrieve outputs
     if isinstance(json['outputs'], list):
-
         for txOutput in json['outputs']:
             output_tx = TransactionOutput(pubKeyFromStr(txOutput['recipient']), txOutput['value'], txOutput['ID'])
             output_set_rec.append(output_tx)
@@ -249,47 +267,3 @@ def transactionFromJSON(json: dict) -> Transaction:
     return Transaction(sender_rec, recipient_rec, value_rec, input_set_rec, change_rec, signature=sig_rec, ID=id_rec, outputs=output_set_rec)
 
 
-def verify_transaction(transaction: Transaction) -> Tuple[bool, str]:
-    """
-    Verifies the transaction by checking:
-    - If the number of recipients matches the number of values.
-    - The format of transaction inputs.
-    - All inputs are in UXTOs.
-    - The signature is valid.
-    - The total input value matches the total output value.
-
-    :param transaction: The transaction to verify.
-    :param UXTOs: Dictionary of unspent transaction outputs.
-    :return: True if the transaction is valid, False otherwise and error message.
-    """
-
-    # Verify recipient and value list match
-    if isinstance(transaction.recipient, list) and isinstance(transaction.value, list):
-        if len(transaction.recipient) != len(transaction.value):
-            print("Mismatch in number of recipients and values.")
-            return False, "Mismatch in number of recipients and values."
-
-    # Ensure all inputs are in a proper format and unspent
-    inputs = transaction.inputs if isinstance(transaction.inputs, list) else [transaction.inputs]
-    if any(not isinstance(txInput, TransactionInput) or txInput not in UXTOs for txInput in inputs):
-        print("Funds already spent or wrong input format.")
-        return False, "Funds already spent or wrong input format."
-
-    # Verify signature
-    if isinstance(transaction.signature, int):
-        print("No signature")
-        return False, "No signature"
-
-    if not transaction.comfirmSignature(transaction.sender):
-        print("Invalid signature.")
-        return False, "Invalid signature."
-
-    # Check for balance equality between inputs and outputs
-    balance_in = sum(txInput.UXTO.value for txInput in inputs if isinstance(txInput, TransactionInput))
-    balance_out = sum(txOutput.value for txOutput in transaction.outputs if isinstance(txOutput, TransactionOutput))
-
-    if balance_in != balance_out:
-        print("Mismatch between total inputs and total outputs.")
-        return False, "Mismatch between total inputs and total outputs."
-
-    return True, "Tx valid"

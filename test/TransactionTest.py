@@ -4,6 +4,7 @@
 import json
 import unittest
 
+from src.Chain import verify_transaction, UXTOs
 from src.Transaction import *
 
 
@@ -46,7 +47,6 @@ class TransactionTest(unittest.TestCase):
         self.assertEqual(tx.comfirmSignature(wallet), True)
         self.assertEqual(tx.comfirmSignature(wallet2), False)
 
-
     def test_transaction_pubKeyFromString(self):
         uxto = TransactionOutput(wallet2, 0.5, "0")
         inpt = TransactionInput(uxto)
@@ -72,8 +72,6 @@ class TransactionTest(unittest.TestCase):
         self.assertEqual(tx.comfirmSignature(wallet2), True)
         self.assertEqual(tx.comfirmSignature(wallet), False)
 
-
-
     def test_transaction_json(self):
         uxto = TransactionOutput(wallet, 0.5, "0")
         inpt = TransactionInput(uxto)
@@ -87,9 +85,13 @@ class TransactionTest(unittest.TestCase):
         tx_dict_from_json = json.loads(jsonstr2)
         txJSON = transactionFromJSON(tx_dict_from_json)
 
-        # f = open("myfile.txt", "a")
+        # f = open("myfile.txt", "w")
         # f.write(jsonstr2)
-        # f.close()
+
+        print(tx.comfirmSignature(wallet))
+        print(txJSON.comfirmSignature(wallet))
+        self.assertEqual(tx.comfirmSignature(wallet), txJSON.comfirmSignature(wallet))
+
 
         self.assertEqual(tx, txJSON)
 
@@ -111,14 +113,23 @@ class TransactionTest(unittest.TestCase):
 
         tx.createSignature(sk)
         print(verify_transaction(tx))
-        self.assertEqual(verify_transaction(tx), True)
+        self.assertEqual(verify_transaction(tx), (True, 'Tx valid'))
 
         tx = Transaction(wallet, wallet2, 0.3, inpt, 0)
         tx.createSignature(sk)
-        self.assertEqual(verify_transaction(tx), False)
+        self.assertEqual(verify_transaction(tx), (False, 'Mismatch between total inputs and total outputs.'))
 
+    def test_sighature_to_str(self):
 
+        data = str("Darek").encode('utf-8') + str("Krzysiek").encode('utf-8') + str(3).encode('utf-8')
+        signature = sk.sign(data)
 
+        sig_to_str = sigToStr(signature)
+        sig_recovered = sigFromStr(sig_to_str)
+        self.assertEqual(sig_recovered, signature)
+
+        self.assertEqual(wallet.verify(signature, data), True)
+        self.assertEqual(wallet.verify(sig_recovered, data), True)
 
 
 

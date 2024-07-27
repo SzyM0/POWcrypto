@@ -1,15 +1,16 @@
 import hashlib
-import datetime
 from typing import List
+import datetime
 
-from src.Transaction import Transaction
+
+from Transaction import Transaction
 
 
 class Block:
     # Keeps data like hash, nonce, prev hash, merkleRoot, timestamp
 
     def __init__(self, index: int, prevHash: str) -> None:
-        self.index = 0 # todo pamiętać o tym - na razie nie mam pomysłu w jakim miejscu to inicjalozować
+        self.blockIndex = 0  # todo pamiętać o tym - na razie nie mam pomysłu w jakim miejscu to inicjalozować
         self.hash = 0  # calc during mining
         self.prevHash = prevHash
         self.data = []  # list of transactions id
@@ -27,6 +28,7 @@ class Block:
 
     def mineBlock(self):
         self.nonce, self.hash = self.compute_hash_with_proof_of_work()
+        print(f"Block mined successfully at {self.timestamp} \nBlock inxex:{self.blockIndex}\n Hash: {self.hash}\nPrevHash: {self.prevHash}\n--------\n" )
 
     def compute_hash_with_proof_of_work(self, difficulty="00"):
         nonce = 0
@@ -37,15 +39,13 @@ class Block:
             else:
                 nonce += 1
 
-    def confirmPow(self):
-        pass
-
-    def addTransaction(self, transaction: Transaction):
+    def addTransaction(self, transaction: Transaction, index: int):
+        self.blockIndex = index
         self.data.append(transaction.transactionID)
 
     def to_dict(self):
         return {
-            'index': self.index,
+            'index': self.blockIndex,
             'hash': self.hash,
             'prevHash': self.prevHash,
             'data': self.data,
@@ -53,5 +53,4 @@ class Block:
             'nonce': self.nonce
         }
 
-    # def calculateMerkleRoot(self):
 

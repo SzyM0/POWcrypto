@@ -1,8 +1,9 @@
 import ecdsa
 import hashlib
-from src.Transaction import TransactionInput, Transaction, TransactionOutput
+from Transaction import TransactionInput, Transaction, TransactionOutput, pubKeyToStr
 from typing import Tuple, List
 from ecdsa import VerifyingKey, SigningKey
+import requests
 
 
 class Wallet:
@@ -14,7 +15,16 @@ class Wallet:
     def getBalance(self, UXTO: List[TransactionOutput] | TransactionOutput):
         # Updates UXTO field by looking for unspent transactions in DB?
 
-        self.UXTO = UXTO
+        self.UXTO.clear()
+        balance = 0
+        for uxto in UXTO:
+            if uxto.recipient == self.pubKey:
+                self.UXTO.append(uxto)
+                balance += uxto.value
+
+        return balance
+
+    # def sendTransaction(self):
 
     def sendFunds(self, recipient: List[VerifyingKey] | VerifyingKey, value: List[float] | float) -> Transaction | None:
         # Creates transaction and sends it to DB
@@ -40,11 +50,13 @@ class Wallet:
         for uxto in self.UXTO:
             balance += uxto.value
             txIN.append(TransactionInput(uxto))
+            # self.UXTO.remove(uxto)
 
             if balance >= value:
                 chng = balance - value
-                # Todo: zrobić coś z tym - to się wysyła do bazy?
-                return Transaction(self.pubKey, recipient, value, txIN, chng)
+                tx = Transaction(sender=self.pubKey, recipient=recipient, value=value, inputs=txIN, change=chng)
+                tx.createSignature(self.prvKey)
+                return tx
 
         if balance < value:
             print("Not enough funds")
