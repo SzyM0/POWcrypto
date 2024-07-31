@@ -257,3 +257,14 @@ def transactionFromJSON(json: dict) -> Transaction:
     return Transaction(sender_rec, recipient_rec, value_rec, input_set_rec, change_rec, signature=sig_rec, ID=id_rec, outputs=output_set_rec)
 
 
+def transactionOutputFromJSON(txOutput: dict) -> TransactionOutput:
+    output_tx = 0
+    if isinstance(txOutput, dict):
+        output_tx = TransactionOutput(pubKeyFromStr(txOutput['recipient']), txOutput['value'], txOutput['ID'])
+
+    else:
+        print("transactionOutputFromJSON: Input format invalid")
+
+    return output_tx
+
+

@@ -86,19 +86,10 @@ class Chain:
             validatedTx.clear()
 
     def sendTransactions(self) -> None:
-        self.walletA.getBalance(UXTOs)
-        txA = self.walletA.sendFunds(self.walletB.pubKey, random.randint(1, 15))
+        self.walletA.sendFunds(self.walletB.pubKey, random.randint(1, 15))
+        self.walletB.sendFunds(self.walletC.pubKey, random.randint(1, 10))
+        self.walletC.sendFunds(self.walletA.pubKey, random.randint(1, 10))
 
-        self.walletB.getBalance(UXTOs)
-        txB = self.walletB.sendFunds(self.walletC.pubKey, random.randint(1, 10))
-
-        self.walletC.getBalance(UXTOs)
-        txC = self.walletC.sendFunds(self.walletA.pubKey, random.randint(1, 10))
-
-        url = 'http://127.0.0.1:5000/receiveTransaction'
-        requests.post(url, json=txA.to_dict())
-        requests.post(url, json=txB.to_dict())
-        requests.post(url, json=txC.to_dict())
 
 
     def clearRepo(self):
@@ -113,7 +104,7 @@ class Chain:
     def run(self):
         prevIndex = 0
         prevHash = self.genenerateGenesisBlock()
-        print(f" przed {self.walletA.getBalance(UXTOs) + self.walletB.getBalance(UXTOs)=}")
+        print(f" przed {self.walletA.getBalance() + self.walletB.getBalance() + self.walletC.getBalance()=}")
 
         for i in range(10):
             time.sleep(1)
@@ -134,12 +125,10 @@ class Chain:
             prevIndex += 1
             prevHash = newBlock.hash
             txMempool.clear()
-            print(f"{self.walletA.getBalance(UXTOs) + self.walletB.getBalance(UXTOs)=}")
-            print(f"{self.walletB.getBalance(UXTOs)=}")
-            print(f"{self.walletA.getBalance(UXTOs)=}")
-
-
-
+            print(f" przed {self.walletA.getBalance() + self.walletB.getBalance() + self.walletC.getBalance()=}")
+            print(f"{self.walletA.getBalance()=}")
+            print(f"{self.walletB.getBalance()=}")
+            print(f"{self.walletC.getBalance()=}")
         self.clearRepo()
 
 

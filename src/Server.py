@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 from tinydb import TinyDB
 from flask import Flask, jsonify, request
-from Transaction import transactionFromJSON
-from Chain import verify_transaction, validatedTx, Chain, lock
+from Transaction import transactionFromJSON, pubKeyFromStr
+from Chain import verify_transaction, validatedTx, Chain, lock, UXTOs
 import threading
 
 blockRepo = TinyDB('../database/blockRepo.json',  indent=4)
@@ -31,6 +31,27 @@ def receiveTransaction():
         validatedTx.append(txJSON)
 
     return jsonify({"message": "Tx received", "data": data}), 200
+
+@app.route('/sendUXTOs', methods=['GET'])
+def sendUXTO():
+
+    with lock:
+        unspentTx = UXTOs.copy()
+
+    pubKey = pubKeyFromStr(request.args.get('pubKey', default=None))
+    uxto = []
+    for tx in unspentTx:
+        if tx.recipient == pubKey:
+            uxto.append(tx)
+
+    data = [item.to_dict() for item in uxto]
+
+    if data:
+        return jsonify({"message": "UXTO found ", "data": data}), 200
+    else:
+        return jsonify({"error": "No UXTO found"}), 400
+
+
 
 '''
 1. check if correct and send back a response  

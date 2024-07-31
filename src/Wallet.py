@@ -1,6 +1,6 @@
 import ecdsa
 import hashlib
-from Transaction import TransactionInput, Transaction, TransactionOutput, pubKeyToStr
+from Transaction import TransactionInput, Transaction, TransactionOutput, pubKeyToStr, transactionOutputFromJSON
 from typing import Tuple, List
 from ecdsa import VerifyingKey, SigningKey
 import requests
@@ -12,18 +12,21 @@ class Wallet:
         self.prvKey, self.pubKey = generateKeyPair()
         self.UXTO = []
 
-    # todo możeby przenieść zapytania tutaj i dodać serwis get zwracający UXTO? 
-    def getBalance(self, UXTO: List[TransactionOutput] | TransactionOutput) -> int:
+    # todo możeby przenieść zapytania tutaj i dodać serwis get zwracający UXTO?
+    def getBalance(self) -> int:
         # Updates UXTO field by looking for unspent transactions in DB?
 
-        self.UXTO.clear()
-        balance = 0
-        for uxto in UXTO:
-            if uxto.recipient == self.pubKey:
-                self.UXTO.append(uxto)
-                balance += uxto.value
+        url = 'http://127.0.0.1:5000/sendUXTOs'
+        params = {'pubKey': pubKeyToStr(self.pubKey)}
+        response = requests.get(url, params=params)
 
-        return balance
+        if response.status_code == 200:
+            unspentTxGet = [transactionOutputFromJSON(item) for item in response.json()['data']]
+            self.UXTO.clear()
+            self.UXTO = unspentTxGet
+            balance = sum([item.value for item in unspentTxGet])
+
+            return balance
 
     # def sendTransaction(self):
 
@@ -41,7 +44,8 @@ class Wallet:
 
         :return: Transaction
         """
-        # todo tutaj przypadek jak jest kilka recipientów
+        self.getBalance()
+
         txIN = []
         balance = 0
 
@@ -59,6 +63,8 @@ class Wallet:
                 chng = balance - value
                 tx = Transaction(sender=self.pubKey, recipient=recipient, value=value, inputs=txIN, change=chng)
                 tx.createSignature(self.prvKey)
+                url = 'http://127.0.0.1:5000/receiveTransaction'
+                requests.post(url, json=tx.to_dict())
                 return tx
 
         if balance < value:
