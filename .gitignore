@@ -4,6 +4,11 @@ test/.pytest_cache/
 *.jpg
 src/__pycache__/
 test/__pycache__/
-database/
+
 Main.png
 test/myfile.txt
+
+# exclude everything
+database/*
+# exception to the rule
+!database/.gitkeep 
