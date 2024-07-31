@@ -12,6 +12,7 @@ class Wallet:
         self.prvKey, self.pubKey = generateKeyPair()
         self.UXTO = []
 
+    # todo możeby przenieść zapytania tutaj i dodać serwis get zwracający UXTO? 
     def getBalance(self, UXTO: List[TransactionOutput] | TransactionOutput) -> int:
         # Updates UXTO field by looking for unspent transactions in DB?
 
@@ -40,6 +41,7 @@ class Wallet:
 
         :return: Transaction
         """
+        # todo tutaj przypadek jak jest kilka recipientów
         txIN = []
         balance = 0
 
@@ -47,7 +49,8 @@ class Wallet:
             print("No UXTO to spend")
             return None
 
-        for uxto in self.UXTO:
+        for uxto in self.UXTO.copy():
+
             balance += uxto.value
             txIN.append(TransactionInput(uxto))
             self.UXTO.remove(uxto)
@@ -62,7 +65,7 @@ class Wallet:
             print("Not enough funds")
             return None
 
-
+ # todo zrobić tą funkcję wewętrzną klasy wallet
 def generateKeyPair() -> Tuple[SigningKey, VerifyingKey]:
 
     secretKey = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256)

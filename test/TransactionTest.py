@@ -8,17 +8,17 @@ from src.Chain import verify_transaction, UXTOs
 from src.Transaction import *
 
 
-sk = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256)  # The default is sha1
+sk = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256)
 wallet = sk.get_verifying_key()
 
-sk2 = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256, )  # The default is sha1
+sk2 = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256)
 wallet2 = sk2.get_verifying_key()
 
-sk3 = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256, )  # The default is sha1
+sk3 = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256)
 wallet3 = sk3.get_verifying_key()
 
-class TransactionTest(unittest.TestCase):
 
+class TransactionTest(unittest.TestCase):
 
     def test_transaction_constructor_1input(self):
         UXTO = TransactionOutput(wallet, 0.5, "0")
@@ -88,9 +88,9 @@ class TransactionTest(unittest.TestCase):
         # f = open("myfile.txt", "w")
         # f.write(jsonstr2)
 
-        print(tx.comfirmSignature(wallet))
-        print(txJSON.comfirmSignature(wallet))
-        self.assertEqual(tx.comfirmSignature(wallet), txJSON.comfirmSignature(wallet))
+        print(tx.comfirmSignature())
+        print(txJSON.comfirmSignature())
+        self.assertEqual(tx.comfirmSignature(), txJSON.comfirmSignature())
 
 
         self.assertEqual(tx, txJSON)

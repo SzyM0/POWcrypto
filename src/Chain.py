@@ -11,11 +11,12 @@ from Block import Block
 from Transaction import Transaction, TransactionInput, TransactionOutput
 from Wallet import Wallet
 
+# todo jest bug, że na końcu jest dwa razy więcej siana niż w supply oryginalnie gdzieś ich musi przybywać
 
 lock = threading.Lock()
 
 SUPPLY = 100
-MIN_NOMINAL = 0.000001 # TODO MOŻNA DODAĆ SPRAWDZENIE TEGO
+MIN_NOMINAL = 0.000001  # TODO DODAĆ SPRAWDZENIE TEGO
 DIFFICULTY = "000"
 
 validatedTx = []
@@ -32,17 +33,18 @@ class Chain:
 
         self.walletA = Wallet()
         self.walletB = Wallet()
+        self.walletC = Wallet()
 
         # self.genenerateGenesisBlock()
 
     def genenerateGenesisBlock(self) -> str:
         coinbase = Wallet()
 
-        genesisTransaction = Transaction(coinbase.pubKey, [self.walletA.pubKey, self.walletB.pubKey],
-                                         [SUPPLY / 2, SUPPLY / 2], None, 0)
+        genesisTransaction = Transaction(coinbase.pubKey, [self.walletA.pubKey, self.walletB.pubKey, self.walletC.pubKey],
+                                         [SUPPLY / 2, SUPPLY / 2, 50], None, 0)
         genesisTransaction.setBlockIndex(0)
         genesisTransaction.createSignature(self.walletA.prvKey)
-        UXTOs.extend(genesisTransaction.outputs)
+        # UXTOs.extend(genesisTransaction.outputs)
 
         genesisBlock = Block(prevHash="0", index=0)
         genesisBlock.addTransaction(transaction=genesisTransaction)
@@ -85,14 +87,19 @@ class Chain:
 
     def sendTransactions(self) -> None:
         self.walletA.getBalance(UXTOs)
-        txA = self.walletA.sendFunds(self.walletB.pubKey, random.randint(2, 6))
+        txA = self.walletA.sendFunds(self.walletB.pubKey, random.randint(1, 15))
 
         self.walletB.getBalance(UXTOs)
-        txB = self.walletB.sendFunds(self.walletB.pubKey, random.randint(2, 6))
+        txB = self.walletB.sendFunds(self.walletC.pubKey, random.randint(1, 10))
+
+        self.walletC.getBalance(UXTOs)
+        txC = self.walletC.sendFunds(self.walletA.pubKey, random.randint(1, 10))
 
         url = 'http://127.0.0.1:5000/receiveTransaction'
         requests.post(url, json=txA.to_dict())
         requests.post(url, json=txB.to_dict())
+        requests.post(url, json=txC.to_dict())
+
 
     def clearRepo(self):
         self.txRepo.truncate()
@@ -106,6 +113,7 @@ class Chain:
     def run(self):
         prevIndex = 0
         prevHash = self.genenerateGenesisBlock()
+        print(f" przed {self.walletA.getBalance(UXTOs) + self.walletB.getBalance(UXTOs)=}")
 
         for i in range(10):
             time.sleep(1)
@@ -126,9 +134,12 @@ class Chain:
             prevIndex += 1
             prevHash = newBlock.hash
             txMempool.clear()
+            print(f"{self.walletA.getBalance(UXTOs) + self.walletB.getBalance(UXTOs)=}")
+            print(f"{self.walletB.getBalance(UXTOs)=}")
+            print(f"{self.walletA.getBalance(UXTOs)=}")
 
-        print(f"{self.walletB.getBalance(UXTOs)=}")
-        print(f"{self.walletA.getBalance(UXTOs)=}")
+
+
         self.clearRepo()
 
 

@@ -1,5 +1,4 @@
 import hashlib
-from typing import List
 import datetime
 
 
@@ -20,14 +19,14 @@ class Block:
     def calcHashWithNonce(self, nonce) -> str:
         sha = hashlib.sha256()
         sha.update(str(self.prevHash).encode('utf-8') +
-                   str(self.data).encode('utf-8') +
+                   str(self.blockIndex).encode('utf-8') +
                    str(self.timestamp).encode('utf-8') +
                    str(nonce).encode('utf-8'))
 
         return sha.hexdigest()
 
     def mineBlock(self, difficulty: str) -> None:
-        self.nonce, self.hash = self.compute_hash_with_proof_of_work(difficulty)
+        self.nonce, self.hash = self.computeHashWithProofOfWork(difficulty)
         print(f"\n ---------- "
               f"Block mined successfully at {self.timestamp}"
               f" ---------- \n"
@@ -36,7 +35,7 @@ class Block:
               f"PrevHash: {self.prevHash}"
               f"\n")
 
-    def compute_hash_with_proof_of_work(self, difficulty="00"):
+    def computeHashWithProofOfWork(self, difficulty="00"):
         nonce = 0
         while True:  ## loop forever
             hash = self.calcHashWithNonce(nonce)

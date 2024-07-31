@@ -36,19 +36,13 @@ class TransactionOutput:
     def __init__(self, recipient: VerifyingKey, value: float, ID: str=None):
         self.recipient = recipient
         self.value = value
-        self.ID = self.createID() if ID is None else ID  # ID == none tylko w przypadku bloku genezy
-
-    def createID(self) -> str:
-        sha = hashlib.sha256()
-        sha.update(str(self.recipient).encode('utf-8') +
-                   str(self.value).encode('utf-8'))
-        return sha.hexdigest()
+        self.ID = ID  # ID == none tylko w przypadku bloku genezy
 
     def __eq__(self, other):
         if isinstance(other, TransactionOutput):
-            result = self.ID == other.ID
+            result = (self.ID == other.ID)
         elif isinstance(other, TransactionInput):
-            result = self.ID == other.ID and other.UXTO.recipient == self.recipient and other.UXTO.value == self.value
+            result = (self.ID == other.ID and other.UXTO.recipient == self.recipient and other.UXTO.value == self.value)
         else:
             result = False
         return result
@@ -75,10 +69,8 @@ class TransactionInput:
             result = self.ID == other.ID and self.UXTO.recipient == other.recipient and self.UXTO.value == other.value
         else:
             result = False
+        print(f"Compared {self} to {other} result is {result} ")
         return result
-
-    def __hash__(self):
-        return hash((self.ID, self.UXTO))
 
     def to_dict(self):
         return {
@@ -108,6 +100,7 @@ class Transaction:
         self.inputs = inputs
         self.transactionID = self.createID() if ID is None else ID
         self.outputs = self.createOutputs() if outputs is None else outputs
+        # todo dodać timestamp + dodać go do hasha transakcji
 
     def setBlockIndex(self, index):
         self.blockIndex = index
@@ -118,12 +111,14 @@ class Transaction:
 
         :return: str hash
         '''
+        parentID = "".encode('utf-8') if self.inputs is None else "".join(item.ID for item in self.inputs).encode(
+            'utf-8')
 
         sha = hashlib.sha256()
         sha.update(str(self.sender).encode('utf-8') +
                    str(self.recipient).encode('utf-8') +
                    str(self.value).encode('utf-8') +
-                   str(random.randint(0, 100)).encode('utf-8'))
+                   parentID)
         return sha.hexdigest()
 
     def createOutputs(self) -> List[TransactionOutput] | TransactionOutput | None:
@@ -161,7 +156,8 @@ class Transaction:
         :return: Updates signature field
         '''
 
-        data = str(self.recipient).encode('utf-8') + str(self.sender).encode('utf-8') + str(self.value).encode('utf-8')
+        data = (str(self.recipient).encode('utf-8') + str(self.sender).encode('utf-8')
+                + str(self.value).encode('utf-8') + self.transactionID.encode('utf-8'))
         signature = privKey.sign(data)
         self.signature = signature
 
@@ -172,8 +168,9 @@ class Transaction:
         :param : public key
         :return: True/False
         '''
-        data = str(self.recipient).encode('utf-8') + str(self.sender).encode('utf-8') + str(self.value).encode('utf-8')
 
+        data = (str(self.recipient).encode('utf-8') + str(self.sender).encode('utf-8')
+                + str(self.value).encode('utf-8') + self.transactionID.encode('utf-8'))
         try:
             confirmation_result = self.sender.verify(self.signature, data)
         except ecdsa.BadSignatureError:
