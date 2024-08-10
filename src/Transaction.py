@@ -69,7 +69,6 @@ class TransactionInput:
             result = self.ID == other.ID and self.UXTO.recipient == other.recipient and self.UXTO.value == other.value
         else:
             result = False
-        print(f"Compared {self} to {other} result is {result} ")
         return result
 
     def to_dict(self):
@@ -100,7 +99,6 @@ class Transaction:
         self.inputs = inputs
         self.transactionID = self.createID() if ID is None else ID
         self.outputs = self.createOutputs() if outputs is None else outputs
-        # todo dodać timestamp + dodać go do hasha transakcji
 
     def setBlockIndex(self, index):
         self.blockIndex = index

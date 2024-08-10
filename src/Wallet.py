@@ -16,7 +16,7 @@ class Wallet:
     def getBalance(self) -> int:
         # Updates UXTO field by looking for unspent transactions in DB?
 
-        url = 'http://127.0.0.1:5000/sendUXTOs'
+        url = 'http://127.0.0.1:5000/getUXTO'
         params = {'pubKey': pubKeyToStr(self.pubKey)}
         response = requests.get(url, params=params)
 
@@ -46,6 +46,9 @@ class Wallet:
         """
         self.getBalance()
 
+        # todo pomyśleć jak lepiej zrobić ten get balance czy nie lepiej go wywoływać jak jest za mało kasy czy jest sens za każdym
+        #  razem bo inaczej może nie być sensu trzymać listy uxto lokalnie
+
         txIN = []
         balance = 0
 
@@ -63,7 +66,7 @@ class Wallet:
                 chng = balance - value
                 tx = Transaction(sender=self.pubKey, recipient=recipient, value=value, inputs=txIN, change=chng)
                 tx.createSignature(self.prvKey)
-                url = 'http://127.0.0.1:5000/receiveTransaction'
+                url = 'http://127.0.0.1:5000/postTransaction'
                 requests.post(url, json=tx.to_dict())
                 return tx
 

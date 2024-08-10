@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+import decimal
 import json
 import random
 import threading
@@ -25,11 +26,10 @@ UXTOs = []
 
 class Chain:
 
-    def __init__(self, txRepo, blockRepo, txOutRepo, walletRepo):
+    def __init__(self, txRepo, blockRepo, txOutRepo):
         self.txRepo = txRepo
         self.blockRepo = blockRepo
         self.txOutRepo = txOutRepo
-        self.walletRepo = walletRepo
 
         self.walletA = Wallet()
         self.walletB = Wallet()
@@ -40,16 +40,25 @@ class Chain:
     def genenerateGenesisBlock(self) -> str:
         coinbase = Wallet()
 
-        genesisTransaction = Transaction(coinbase.pubKey, [self.walletA.pubKey, self.walletB.pubKey, self.walletC.pubKey],
-                                         [SUPPLY / 2, SUPPLY / 2, 50], None, 0)
+        genesisTransaction = Transaction(coinbase.pubKey, [self.walletA.pubKey, self.walletB.pubKey],
+                                         [SUPPLY / 2, SUPPLY / 2], None, 0, ID="0"*64)
         genesisTransaction.setBlockIndex(0)
         genesisTransaction.createSignature(self.walletA.prvKey)
         # UXTOs.extend(genesisTransaction.outputs)
 
-        genesisBlock = Block(prevHash="0", index=0)
+        genesisBlock = Block(prevHash="", index=0)
         genesisBlock.addTransaction(transaction=genesisTransaction)
-        genesisBlock.mineBlock(difficulty=DIFFICULTY)
+        genesisBlock.setGenesisHash()
+        # genesisBlock.mineBlock(difficulty=DIFFICULTY)
         self.addBlock(block=genesisBlock, transactions=[genesisTransaction])
+
+        print(f"\n ---------- "
+              f"Genesis Block created at {genesisBlock.timestamp}"
+              f" ---------- \n"
+              f"Block index:{genesisBlock.blockIndex}\n"
+              f"Hash: {genesisBlock.hash}\n"
+              f"PrevHash: {genesisBlock.prevHash}"
+              f"\n")
 
         return genesisBlock.hash
 
@@ -86,11 +95,9 @@ class Chain:
             validatedTx.clear()
 
     def sendTransactions(self) -> None:
-        self.walletA.sendFunds(self.walletB.pubKey, random.randint(1, 15))
-        self.walletB.sendFunds(self.walletC.pubKey, random.randint(1, 10))
-        self.walletC.sendFunds(self.walletA.pubKey, random.randint(1, 10))
-
-
+        self.walletA.sendFunds(self.walletB.pubKey, round(random.uniform(1, 15), 5))
+        self.walletB.sendFunds(self.walletA.pubKey, round(random.uniform(1, 10), 5))
+        # self.walletC.sendFunds(self.walletA.pubKey, random.randint(1, 10))
 
     def clearRepo(self):
         self.txRepo.truncate()
@@ -104,7 +111,7 @@ class Chain:
     def run(self):
         prevIndex = 0
         prevHash = self.genenerateGenesisBlock()
-        print(f" przed {self.walletA.getBalance() + self.walletB.getBalance() + self.walletC.getBalance()=}")
+        # print(f" przed {self.walletA.getBalance() + self.walletB.getBalance() + self.walletC.getBalance()=}")
 
         for i in range(10):
             time.sleep(1)
@@ -125,10 +132,10 @@ class Chain:
             prevIndex += 1
             prevHash = newBlock.hash
             txMempool.clear()
-            print(f" przed {self.walletA.getBalance() + self.walletB.getBalance() + self.walletC.getBalance()=}")
+            # print(f" przed {self.walletA.getBalance() + self.walletB.getBalance() + self.walletC.getBalance()=}")
             print(f"{self.walletA.getBalance()=}")
             print(f"{self.walletB.getBalance()=}")
-            print(f"{self.walletC.getBalance()=}")
+            # print(f"{self.walletC.getBalance()=}")
         self.clearRepo()
 
 
@@ -174,6 +181,11 @@ def verify_transaction(transaction: Transaction) -> Tuple[bool, str]:
     # Check for balance equality between inputs and outputs
     balance_in = sum(txInput.UXTO.value for txInput in inputs if isinstance(txInput, TransactionInput))
     balance_out = sum(txOutput.value for txOutput in transaction.outputs if isinstance(txOutput, TransactionOutput))
+
+    d = decimal.Decimal(str(balance_out))
+    if d.as_tuple().exponent < -6:
+        print("The transaction amount is invalid. Please enter an amount rounded to the nearest cent.")
+        return False, "The transaction amount is invalid. Please enter an amount rounded to the nearest cent."
 
     if balance_in != balance_out:
         print("Mismatch between total inputs and total outputs.")

@@ -10,11 +10,14 @@ class Block:
 
     def __init__(self, prevHash: str, index:  int = 0) -> None:
         self.blockIndex = index
-        self.hash = 0  # calc during mining
+        self.hash = ""  # calc during mining
         self.prevHash = prevHash
         self.data = []  # list of transactions id
         self.nonce = 0
         self.timestamp = datetime.datetime.now()
+
+    def setGenesisHash(self):
+        self.hash = "0" * 64
 
     def calcHashWithNonce(self, nonce) -> str:
         sha = hashlib.sha256()

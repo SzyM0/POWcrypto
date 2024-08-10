@@ -9,11 +9,10 @@ import threading
 blockRepo = TinyDB('../database/blockRepo.json',  indent=4)
 txRepo = TinyDB('../database/txRepo.json',  indent=4)
 txOutRepo = TinyDB('../database/txOutRepo.json',  indent=4)
-walletRepo = TinyDB('../database/walletRepo.json',  indent=4)
 
 app = Flask(__name__)
 
-@app.route('/receiveTransaction', methods=['POST'])
+@app.route('/postTransaction', methods=['POST'])
 def receiveTransaction():
     data = request.get_json()
     txJSON = transactionFromJSON(data)
@@ -32,7 +31,7 @@ def receiveTransaction():
 
     return jsonify({"message": "Tx received", "data": data}), 200
 
-@app.route('/sendUXTOs', methods=['GET'])
+@app.route('/getUXTO', methods=['GET'])
 def sendUXTO():
 
     with lock:
@@ -59,7 +58,7 @@ def sendUXTO():
 '''
 
 if __name__ == '__main__':
-    chain = Chain(txRepo, blockRepo, txOutRepo, walletRepo)
+    chain = Chain(txRepo, blockRepo, txOutRepo)
     threading.Thread(target=chain.run, daemon=True).start()
     app.run(debug=True, use_reloader=False)
 
