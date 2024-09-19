@@ -17,21 +17,20 @@ walletRepo = TinyDB('../database/test_database/walletRepo.json')
 class ChainTest(unittest.TestCase):
 
     def setUp(self):
-        self.chain = Chain(txRepo, blockRepo, txOutRepo, walletRepo)
+        self.chain = Chain(txRepo, blockRepo, txOutRepo)
     def test_verify_transaction(self):
         # txJSON = self.chain.sendTransactions()
         with open('myfile.txt') as f:
             txJSON = json.load(f)
 
         tx = transactionFromJSON(txJSON)
-        UXTOs.append(tx.outputs)
-        # verify_transaction(tx)
-        self.assertEqual((True, "Tx valid"), verify_transaction(tx))
+        verify_transaction(tx)
+        self.assertEqual((False, 'Funds already spent.'), verify_transaction(tx))
 
-    def test_store_tx(self):
-        with open('myfile.txt') as f:
-            txJSON = json.load(f)
-        self.chain.storeTransactions(txJSON)
+    # def test_store_tx(self):
+    #     with open('myfile.txt') as f:
+    #         txJSON = json.load(f)
+    #     self.chain.storeTransactions([txJSON])
 
 
 

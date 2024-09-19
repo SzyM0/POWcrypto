@@ -8,9 +8,9 @@ import time
 from typing import Tuple, List
 import requests
 from tinydb import Query
-from Block import Block
-from Transaction import Transaction, TransactionInput, TransactionOutput
-from Wallet import Wallet
+from src.Block import Block
+from src.Transaction import Transaction, TransactionInput, TransactionOutput
+from src.Wallet import Wallet
 
 # todo jest bug, że na końcu jest dwa razy więcej siana niż w supply oryginalnie gdzieś ich musi przybywać
 
@@ -95,8 +95,8 @@ class Chain:
             validatedTx.clear()
 
     def sendTransactions(self) -> None:
-        self.walletA.sendFunds(self.walletB.pubKey, round(random.uniform(1, 15), 5))
-        self.walletB.sendFunds(self.walletA.pubKey, round(random.uniform(1, 10), 5))
+        self.walletA.sendFunds(self.walletB.pubKey, round(random.uniform(1, 5), 4))
+        self.walletB.sendFunds(self.walletA.pubKey, round(random.uniform(1, 5), 4))
         # self.walletC.sendFunds(self.walletA.pubKey, random.randint(1, 10))
 
     def clearRepo(self):

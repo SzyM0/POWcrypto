@@ -1,6 +1,6 @@
 import ecdsa
 import hashlib
-from Transaction import TransactionInput, Transaction, TransactionOutput, pubKeyToStr, transactionOutputFromJSON
+from src.Transaction import TransactionInput, Transaction, TransactionOutput, pubKeyToStr, transactionOutputFromJSON
 from typing import Tuple, List
 from ecdsa import VerifyingKey, SigningKey
 import requests
@@ -27,6 +27,9 @@ class Wallet:
             balance = sum([item.value for item in unspentTxGet])
 
             return balance
+
+    def getBalanceOffline(self):
+        return sum([item.value for item in self.UXTO])
 
     # def sendTransaction(self):
 

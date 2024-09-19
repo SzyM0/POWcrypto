@@ -2,7 +2,7 @@ import hashlib
 import datetime
 
 
-from Transaction import Transaction
+from src.Transaction import Transaction
 
 
 class Block:

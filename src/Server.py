@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 from tinydb import TinyDB
 from flask import Flask, jsonify, request
-from Transaction import transactionFromJSON, pubKeyFromStr
-from Chain import verify_transaction, validatedTx, Chain, lock, UXTOs
+from src.Transaction import transactionFromJSON, pubKeyFromStr
+from src.Chain import verify_transaction, validatedTx, Chain, lock, UXTOs
 import threading
 
 blockRepo = TinyDB('../database/blockRepo.json',  indent=4)
@@ -60,5 +60,5 @@ def sendUXTO():
 if __name__ == '__main__':
     chain = Chain(txRepo, blockRepo, txOutRepo)
     threading.Thread(target=chain.run, daemon=True).start()
-    app.run(debug=True, use_reloader=False)
+    app.run(debug=False, use_reloader=False)
 

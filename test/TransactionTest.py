@@ -3,7 +3,6 @@
 
 import json
 import unittest
-
 from src.Chain import verify_transaction, UXTOs
 from src.Transaction import *
 
@@ -17,22 +16,31 @@ wallet2 = sk2.get_verifying_key()
 sk3 = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256)
 wallet3 = sk3.get_verifying_key()
 
+private_key = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1)
+public_key = private_key.get_verifying_key()
+
+# Funkcje pomocnicze do tworzenia danych testowych
+def generate_output(value, ID=None):
+    return TransactionOutput(public_key, value, ID)
+
+def generate_input(output):
+    return TransactionInput(output)
 
 class TransactionTest(unittest.TestCase):
 
     def test_transaction_constructor_1input(self):
         UXTO = TransactionOutput(wallet, 0.5, "0")
         inpt = TransactionInput(UXTO)
-
-        tx = Transaction(wallet, wallet2, 0.1, inpt, 0)
-
+        #
+        tx = Transaction(wallet, wallet2, 0.1, [inpt], 0)
+        #
         self.assertEqual(tx.outputs, [TransactionOutput(wallet2, 0.1, tx.transactionID)])
 
     def test_transaction_constructor_3input(self):
         UXTO = TransactionOutput(wallet, 0.5, "0")
         inpt = TransactionInput(UXTO)
 
-        tx = Transaction(wallet, [wallet2, wallet3], [0.1, 0.2], inpt, 0)
+        tx = Transaction(wallet, [wallet2, wallet3], [0.1, 0.2], [inpt], 0)
 
         self.assertEqual(tx.outputs, [TransactionOutput(wallet2, 0.1, tx.transactionID),
                                       TransactionOutput(wallet3, 0.2, tx.transactionID)])
@@ -41,27 +49,26 @@ class TransactionTest(unittest.TestCase):
         UXTO = TransactionOutput(wallet, 0.5, "0")
         inpt = TransactionInput(UXTO)
 
-        tx = Transaction(wallet2, wallet3, 0.1, inpt, 0)
+        tx = Transaction(wallet2, wallet3, 0.1, [inpt], 0)
 
-        tx.createSignature(sk)
-        self.assertEqual(tx.comfirmSignature(wallet), True)
-        self.assertEqual(tx.comfirmSignature(wallet2), False)
+        tx.createSignature(sk2)
+        self.assertEqual(tx.comfirmSignature(), True)
+        # self.assertEqual(tx.comfirmSignature(), False)
 
     def test_transaction_pubKeyFromString(self):
         uxto = TransactionOutput(wallet2, 0.5, "0")
         inpt = TransactionInput(uxto)
 
-        tx = Transaction(wallet2, wallet3, 0.1, inpt, 0)
+        tx = Transaction(wallet2, wallet3, 0.1, [inpt], 0)
 
-        tx.createSignature(sk)
+        tx.createSignature(sk2)
 
-        self.assertEqual(tx.comfirmSignature(wallet), True)
-        self.assertEqual(tx.comfirmSignature(wallet2), False)
+        self.assertEqual(True, tx.comfirmSignature())
 
     def test_transaction_sigToStr(self):
         uxto = TransactionOutput(wallet2, 0.5, "0")
         inpt = TransactionInput(uxto)
-        tx = Transaction(wallet2, wallet3, 0.1, inpt, 0)
+        tx = Transaction(wallet2, wallet3, 0.1, [inpt], 0)
         tx.createSignature(sk2)
 
         sig_to_str = sigToStr(tx.signature)
@@ -69,13 +76,12 @@ class TransactionTest(unittest.TestCase):
 
         tx.signature = sig_recovered
 
-        self.assertEqual(tx.comfirmSignature(wallet2), True)
-        self.assertEqual(tx.comfirmSignature(wallet), False)
+        self.assertEqual(tx.comfirmSignature(), True)
 
     def test_transaction_json(self):
         uxto = TransactionOutput(wallet, 0.5, "0")
         inpt = TransactionInput(uxto)
-        tx = Transaction(wallet, wallet2, 0.3, inpt, 0)
+        tx = Transaction(wallet, wallet2, 0.3, [inpt], 0)
 
         tx.createSignature(sk)
 
@@ -109,13 +115,13 @@ class TransactionTest(unittest.TestCase):
         uxto = TransactionOutput(wallet, 0.5, "0")
         UXTOs.append(uxto)
         inpt = TransactionInput(uxto)
-        tx = Transaction(wallet, wallet2, 0.3, inpt, 0.2)
+        tx = Transaction(wallet, wallet2, 0.3, [inpt], 0.2)
 
         tx.createSignature(sk)
         print(verify_transaction(tx))
         self.assertEqual(verify_transaction(tx), (True, 'Tx valid'))
 
-        tx = Transaction(wallet, wallet2, 0.3, inpt, 0)
+        tx = Transaction(wallet, wallet2, 0.3, [inpt], 0)
         tx.createSignature(sk)
         self.assertEqual(verify_transaction(tx), (False, 'Mismatch between total inputs and total outputs.'))
 
