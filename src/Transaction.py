@@ -1,6 +1,4 @@
 import hashlib
-import random
-
 import ecdsa
 from ecdsa import VerifyingKey, SigningKey
 from typing import List
@@ -122,6 +120,7 @@ class Transaction:
     def createOutputs(self) -> List[TransactionOutput] | TransactionOutput | None:
         '''
         Creates output objects based on the list of recipients
+
         :return: UXTO list
         '''
 
@@ -131,7 +130,6 @@ class Transaction:
         if not isinstance(self.recipient, list) and not isinstance(self.value, list):
             uxto_set.append(TransactionOutput(self.recipient, self.value, self.transactionID))
         else:
-            #  todo przypadek jak jedno jest listą, a drugie nie
             # If more than one recipient
             if len(self.recipient) != len(self.value):
                 print("Wrong transaction data: recipient and value mismatch")
@@ -192,7 +190,6 @@ class Transaction:
         # in case more than one recipient
         recipient = [pubKeyToStr(rcp) for rcp in self.recipient] if isinstance(self.recipient, list) else pubKeyToStr(self.recipient)
         outputs = [out.to_dict() for out in self.outputs] if isinstance(self.outputs, list) else self.outputs.to_dict()
-        # inputs = [inp.to_dict() for inp in self.inputs] if isinstance(self.inputs, list) else self.inputs.to_dict()
 
         if self.inputs is None:
             inputs = None

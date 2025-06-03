@@ -13,7 +13,7 @@ The main goal of this project is to create a basic framework for a cryptocurrenc
 - **Wallets**: Digital wallets used to store and transfer the cryptocurrency.
 - **Blockchain**: The complete ledger of all transactions, consisting of a chain of blocks.
 
-Data will be stored in a database. Although the final choice of the database has not been made yet, TinyDB is a potential candidate due to its simplicity and ease of use with Python.
+Data will be stored in a database TinyDB  due to its simplicity and ease of use with Python.
 
 ## Components
 
@@ -38,12 +38,6 @@ Data will be stored in a database. Although the final choice of the database has
 6. **Blockchain**
    - A chain of blocks representing the entire transaction ledger.
    - Ensures the integrity and immutability of the transaction history.
-
-## Proof of Work
-
-The project uses the Proof of Work (PoW) algorithm to secure the blockchain. PoW involves solving a computationally intensive puzzle to add a new block to the blockchain, ensuring that the addition of new blocks is difficult and resource-intensive.
-
-## Getting Started
 
 ### Prerequisites
 

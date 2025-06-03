@@ -1,3 +1,4 @@
 ecdsa==0.19.0
-
-tinydb~=4.8.0
+Flask==3.0.3
+Requests==2.32.3
+tinydb==4.8.0

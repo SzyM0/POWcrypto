@@ -31,8 +31,6 @@ class Wallet:
     def getBalanceOffline(self):
         return sum([item.value for item in self.UXTO])
 
-    # def sendTransaction(self):
-
     def sendFunds(self, recipient: List[VerifyingKey] | VerifyingKey, value: List[float] | float) -> Transaction | None:
         # Creates transaction and sends it to DB
 
@@ -48,9 +46,6 @@ class Wallet:
         :return: Transaction
         """
         self.getBalance()
-
-        # todo pomyśleć jak lepiej zrobić ten get balance czy nie lepiej go wywoływać jak jest za mało kasy czy jest sens za każdym
-        #  razem bo inaczej może nie być sensu trzymać listy uxto lokalnie
 
         txIN = []
         balance = 0
@@ -77,7 +72,6 @@ class Wallet:
             print("Not enough funds")
             return None
 
- # todo zrobić tą funkcję wewętrzną klasy wallet
 def generateKeyPair() -> Tuple[SigningKey, VerifyingKey]:
 
     secretKey = ecdsa.SigningKey.generate(curve=ecdsa.SECP256k1, hashfunc=hashlib.sha256)

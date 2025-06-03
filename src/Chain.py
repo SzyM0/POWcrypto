@@ -6,23 +6,19 @@ import random
 import threading
 import time
 from typing import Tuple, List
-import requests
 from tinydb import Query
 from src.Block import Block
 from src.Transaction import Transaction, TransactionInput, TransactionOutput
 from src.Wallet import Wallet
 
-# todo jest bug, że na końcu jest dwa razy więcej siana niż w supply oryginalnie gdzieś ich musi przybywać
-
 lock = threading.Lock()
 
 SUPPLY = 100
-MIN_NOMINAL = 0.000001  # TODO DODAĆ SPRAWDZENIE TEGO
+MIN_NOMINAL = 0.000001
 DIFFICULTY = "000"
 
 validatedTx = []
 UXTOs = []
-
 
 class Chain:
 
@@ -35,8 +31,6 @@ class Chain:
         self.walletB = Wallet()
         self.walletC = Wallet()
 
-        # self.genenerateGenesisBlock()
-
     def genenerateGenesisBlock(self) -> str:
         coinbase = Wallet()
 
@@ -44,7 +38,6 @@ class Chain:
                                          [SUPPLY / 2, SUPPLY / 2], None, 0, ID="0"*64)
         genesisTransaction.setBlockIndex(0)
         genesisTransaction.createSignature(self.walletA.prvKey)
-        # UXTOs.extend(genesisTransaction.outputs)
 
         genesisBlock = Block(prevHash="", index=0)
         genesisBlock.addTransaction(transaction=genesisTransaction)
@@ -111,7 +104,6 @@ class Chain:
     def run(self):
         prevIndex = 0
         prevHash = self.genenerateGenesisBlock()
-        # print(f" przed {self.walletA.getBalance() + self.walletB.getBalance() + self.walletC.getBalance()=}")
 
         for i in range(10):
             time.sleep(1)
@@ -127,15 +119,11 @@ class Chain:
             newBlock.mineBlock(difficulty=DIFFICULTY)
             self.addBlock(newBlock, txMempool)
 
-            # todo dodać żeby blok kopał się mając z dwie transakcje przynajmniej
-
             prevIndex += 1
             prevHash = newBlock.hash
             txMempool.clear()
-            # print(f" przed {self.walletA.getBalance() + self.walletB.getBalance() + self.walletC.getBalance()=}")
             print(f"{self.walletA.getBalance()=}")
             print(f"{self.walletB.getBalance()=}")
-            # print(f"{self.walletC.getBalance()=}")
         self.clearRepo()
 
 
